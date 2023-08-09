@@ -179,6 +179,4 @@ fn main() {
     }
 
     endwin();
-
-    println!("{:?}", state.pipes);
 }
