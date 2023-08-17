@@ -43,17 +43,11 @@ struct Bird {
 enum Action {
     Jump,
     Quit,
+    Restart,
 }
 
-fn init() -> (WINDOW, GameState) {
-    initscr();
-    noecho();
-    curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
-    nodelay(stdscr(), true);
-
-    let win = newwin(LINES(), COLS(), 0, 0);
-
-    let initial_state = GameState {
+fn get_initial_state() -> GameState {
+    GameState {
         bird: Bird {
             x: COLS() as f32 / 8.0,
             y: LINES() as f32 / 2.5,
@@ -65,8 +59,18 @@ fn init() -> (WINDOW, GameState) {
             .collect(),
 
         should_quit: false,
-    };
+    }
+}
 
+fn init() -> (WINDOW, GameState) {
+    initscr();
+    noecho();
+    curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
+    nodelay(stdscr(), true);
+
+    let win = newwin(LINES(), COLS(), 0, 0);
+
+    let initial_state = get_initial_state();
     (win, initial_state)
 }
 
@@ -78,6 +82,7 @@ fn handle_input() -> Option<Action> {
         .map(|c| match c {
             ' ' => Some(Action::Jump),
             'q' => Some(Action::Quit),
+            'r' => Some(Action::Restart),
             _ => None,
         })
         .flatten()
@@ -98,7 +103,14 @@ fn update(state: GameState, action: Option<Action>) -> GameState {
                 .contains(&(state.bird.y as i32))
     });
 
-    if hit_pipe {
+    let is_in_vertical_bound = (0..LINES()).contains(&(state.bird.y as i32));
+    let should_return_game_over = hit_pipe || !is_in_vertical_bound;
+
+    if should_return_game_over {
+        if let Some(Restart) = action {
+            return get_initial_state();
+        }
+
         return state;
     }
 
